@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Misión Cesta - El juego está roto</title>
+  <style>
+    :root{
+      --bg:#0f1226;
+      --panel:#191d3a;
+      --panel2:#222750;
+      --accent:#7c5cff;
+      --accent2:#24d6a2;
+      --text:#f4f6ff;
+      --muted:#b8bfdf;
+      --danger:#ff6b7a;
+      --warning:#ffc857;
+      --shadow:0 20px 50px rgba(0,0,0,.35);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 15%, rgba(124,92,255,.20), transparent 30%),
+        radial-gradient(circle at 85% 20%, rgba(36,214,162,.12), transparent 28%),
+        linear-gradient(180deg,#0d1022,#090b17 72%);
+      overflow-x:hidden;
+    }
+
+    button, textarea{
+      font:inherit;
+    }
+
+    .screen{
+      min-height:100vh;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .screen.active{display:flex}
+
+    .card{
+      width:min(980px,100%);
+      background:rgba(25,29,58,.92);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      backdrop-filter:blur(8px);
+    }
+
+    .hero{
+      padding:56px 48px 50px;
+      text-align:center;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 14px;
+      border-radius:999px;
+      background:rgba(255,107,122,.12);
+      border:1px solid rgba(255,107,122,.30);
+      color:#ffd8dd;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      font-size:.82rem;
+    }
+
+    h1{
+      font-size:clamp(2.2rem,5vw,4.5rem);
+      margin:20px 0 8px;
+      line-height:1;
+      letter-spacing:-.04em;
+    }
+
+    .subtitle{
+      max-width:720px;
+      margin:0 auto;
+      color:var(--muted);
+      font-size:clamp(1rem,2vw,1.2rem);
+      line-height:1.6;
+    }
+
+    .guide{
+      margin:32px auto 0;
+      max-width:700px;
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+      text-align:left;
+      padding:18px;
+      border-radius:18px;
+      background:rgba(124,92,255,.10);
+      border:1px solid rgba(124,92,255,.28);
+    }
+
+    .guide .avatar{
+      width:50px;
+      height:50px;
+      flex:0 0 50px;
+      display:grid;
+      place-items:center;
+      border-radius:15px;
+      background:linear-gradient(145deg,#8f75ff,#5638d8);
+      font-size:1.6rem;
+      box-shadow:0 10px 22px rgba(124,92,255,.28);
+    }
+
+    .guide strong{display:block;margin-bottom:5px}
+    .guide p{margin:0;color:#dfe3ff;line-height:1.5}
+
+    .btnrow{
+      margin-top:32px;
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:0;
+      border-radius:14px;
+      padding:14px 20px;
+      cursor:pointer;
+      font-weight:800;
+      transition:.18s transform,.18s filter,.18s background;
+    }
+
+    .btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
+    .btn:active{transform:translateY(0)}
+
+    .btn.primary{
+      color:white;
+      background:linear-gradient(135deg,var(--accent),#5c3ee8);
+      box-shadow:0 10px 24px rgba(124,92,255,.28);
+    }
+
+    .btn.secondary{
+      color:var(--text);
+      background:#2a305f;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .btn.success{
+      color:#052b22;
+      background:linear-gradient(135deg,#42eab7,#21c795);
+    }
+
+    .tiny{
+      font-size:.9rem;
+      color:var(--muted);
+      margin-top:18px;
+    }
+
+    /* Juego */
+    .game-layout{
+      width:min(1080px,100%);
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 300px;
+      gap:20px;
+      align-items:stretch;
+    }
+
+    .game-card, .side-card{
+      background:rgba(25,29,58,.94);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .game-card{padding:18px}
+    .side-card{padding:22px}
+
+    .game-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .game-title{
+      font-weight:900;
+      font-size:1.15rem;
+    }
+
+    .score{
+      padding:8px 12px;
+      border-radius:12px;
+      background:#10142e;
+      border:1px solid rgba(255,255,255,.08);
+      font-weight:900;
+    }
+
+    #gameArea{
+      position:relative;
+      width:100%;
+      aspect-ratio:16/10;
+      min-height:380px;
+      max-height:640px;
+      overflow:hidden;
+      border-radius:18px;
+      border:2px solid rgba(255,255,255,.09);
+      background:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(180deg,#202857 0%,#16204a 65%,#183d37 65%,#13312c 100%);
+      background-size:32px 32px,32px 32px,auto;
+    }
+
+    .cloud{
+      position:absolute;
+      opacity:.18;
+      font-size:46px;
+      user-select:none;
+    }
+
+    .cloud.c1{top:22px;left:12%}
+    .cloud.c2{top:58px;right:12%;font-size:36px}
+
+    #fruit{
+      position:absolute;
+      left:50%;
+      top:20px;
+      transform:translateX(-50%);
+      width:54px;
+      height:54px;
+      display:grid;
+      place-items:center;
+      font-size:44px;
+      user-select:none;
+      filter:drop-shadow(0 10px 8px rgba(0,0,0,.28));
+      z-index:3;
+    }
+
+    #basket{
+      position:absolute;
+      left:50%;
+      bottom:28px;
+      transform:translateX(-50%);
+      width:110px;
+      height:62px;
+      display:grid;
+      place-items:center;
+      font-size:72px;
+      user-select:none;
+      filter:drop-shadow(0 12px 10px rgba(0,0,0,.30));
+      z-index:4;
+    }
+
+    .ground-line{
+      position:absolute;
+      left:0;right:0;
+      bottom:0;
+      height:8px;
+      background:rgba(36,214,162,.2);
+    }
+
+    .game-message{
+      position:absolute;
+      left:50%;
+      bottom:12px;
+      transform:translateX(-50%) translateY(100px);
+      width:min(90%,560px);
+      padding:14px 16px;
+      border-radius:14px;
+      background:rgba(11,14,32,.95);
+      border:1px solid rgba(255,255,255,.10);
+      color:#eef1ff;
+      text-align:center;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      opacity:0;
+      transition:.3s;
+      z-index:10;
+    }
+
+    .game-message.show{
+      transform:translateX(-50%) translateY(0);
+      opacity:1;
+    }
+
+    .side-card h2{
+      margin:0 0 10px;
+      font-size:1.25rem;
+    }
+
+    .side-card p, .side-card li{
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .keybox{
+      display:flex;
+      gap:10px;
+      margin:16px 0 22px;
+    }
+
+    .key{
+      width:48px;
+      height:48px;
+      display:grid;
+      place-items:center;
+      border-radius:12px;
+      background:#11152e;
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:inset 0 -4px 0 rgba(255,255,255,.05);
+      font-weight:900;
+      font-size:1.3rem;
+    }
+
+    .mission-note{
+      padding:14px;
+      border-radius:14px;
+      background:rgba(255,200,87,.09);
+      border:1px solid rgba(255,200,87,.25);
+      color:#ffe9af;
+      font-size:.95rem;
+      line-height:1.45;
+    }
+
+    .side-actions{
+      margin-top:20px;
+      display:grid;
+      gap:10px;
+    }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:#ffd5da;
+      margin-top:14px;
+      font-size:.9rem;
+    }
+
+    .dot{
+      width:9px;height:9px;border-radius:50%;
+      background:var(--danger);
+      box-shadow:0 0 12px var(--danger);
+    }
+
+    /* Reflexión */
+    .reflection{
+      padding:36px;
+    }
+
+    .reflection h2{
+      margin:0 0 8px;
+      font-size:clamp(1.8rem,4vw,2.7rem);
+    }
+
+    .reflection .intro{
+      color:var(--muted);
+      line-height:1.6;
+      margin-bottom:24px;
+    }
+
+    .question{
+      margin:16px 0;
+      padding:18px;
+      border-radius:16px;
+      background:#151a38;
+      border:1px solid rgba(255,255,255,.07);
+    }
+
+    .question label{
+      display:block;
+      font-weight:800;
+      margin-bottom:10px;
+    }
+
+    .question textarea{
+      width:100%;
+      min-height:86px;
+      resize:vertical;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#0e1229;
+      color:white;
+      padding:12px;
+      outline:none;
+    }
+
+    .question textarea:focus{
+      border-color:rgba(124,92,255,.7);
+      box-shadow:0 0 0 3px rgba(124,92,255,.12);
+    }
+
+    .saved{
+      display:none;
+      margin-top:18px;
+      padding:14px 16px;
+      border-radius:14px;
+      color:#baf8e6;
+      background:rgba(36,214,162,.10);
+      border:1px solid rgba(36,214,162,.25);
+    }
+
+    .saved.show{display:block}
+
+    .field-error{
+      border-color:rgba(255,107,122,.9) !important;
+      box-shadow:0 0 0 3px rgba(255,107,122,.10) !important;
+    }
+
+    .validation-message{
+      display:none;
+      margin-top:16px;
+      padding:13px 15px;
+      border-radius:13px;
+      background:rgba(255,107,122,.10);
+      border:1px solid rgba(255,107,122,.28);
+      color:#ffd5da;
+      line-height:1.5;
+    }
+
+    .validation-message.show{
+      display:block;
+    }
+
+
+    .footer-note{
+      margin-top:22px;
+      color:#8f97bf;
+      font-size:.85rem;
+      text-align:center;
+    }
+
+
+    /* Caja de herramientas */
+    .toolbox-wrap{
+      padding:36px;
+    }
+
+    .toolbox-wrap h2,
+    .challenge-wrap h2{
+      margin:0 0 8px;
+      font-size:clamp(1.8rem,4vw,2.7rem);
+    }
+
+    .toolbox-intro,
+    .challenge-intro{
+      color:var(--muted);
+      line-height:1.6;
+      margin-bottom:24px;
+    }
+
+    .tool-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+    }
+
+    .problem-card{
+      padding:18px;
+      border-radius:18px;
+      background:#151a38;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .problem-card h3{
+      margin:0 0 8px;
+      font-size:1rem;
+    }
+
+    .problem-card p{
+      margin:0 0 14px;
+      color:var(--muted);
+      line-height:1.45;
+      font-size:.95rem;
+    }
+
+    .choice-grid{
+      display:grid;
+      gap:8px;
+    }
+
+    .tool-choice{
+      width:100%;
+      text-align:left;
+      border:1px solid rgba(255,255,255,.09);
+      background:#10142e;
+      color:#e8ebff;
+      padding:10px 12px;
+      border-radius:11px;
+      cursor:pointer;
+      transition:.15s;
+    }
+
+    .tool-choice:hover{
+      transform:translateY(-1px);
+      background:#181d40;
+    }
+
+    .tool-choice.selected{
+      border-color:rgba(124,92,255,.8);
+      background:rgba(124,92,255,.16);
+      box-shadow:0 0 0 2px rgba(124,92,255,.08);
+    }
+
+    .tool-choice.correct{
+      border-color:rgba(36,214,162,.8);
+      background:rgba(36,214,162,.12);
+    }
+
+    .tool-choice.wrong{
+      border-color:rgba(255,107,122,.8);
+      background:rgba(255,107,122,.10);
+    }
+
+    .feedback-box{
+      display:none;
+      margin-top:20px;
+      padding:16px;
+      border-radius:15px;
+      background:#11162f;
+      border:1px solid rgba(255,255,255,.08);
+      line-height:1.5;
+      color:#e6eaff;
+    }
+
+    .feedback-box.show{display:block}
+
+    .progress-row{
+      margin-top:20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .progress-pill{
+      padding:9px 13px;
+      border-radius:999px;
+      background:#10142e;
+      border:1px solid rgba(255,255,255,.08);
+      color:#dfe3ff;
+      font-weight:800;
+      font-size:.9rem;
+    }
+
+
+    /* Sistema de pistas */
+    .help-wrap,
+    .final-wrap{
+      padding:36px;
+    }
+
+    .help-wrap h2,
+    .final-wrap h2{
+      margin:0 0 8px;
+      font-size:clamp(1.8rem,4vw,2.7rem);
+    }
+
+    .help-intro,
+    .final-intro{
+      color:var(--muted);
+      line-height:1.6;
+      margin-bottom:24px;
+    }
+
+    .help-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+    }
+
+    .help-card{
+      background:#151a38;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      overflow:hidden;
+    }
+
+    .help-head{
+      padding:18px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+
+    .help-head h3{
+      margin:0 0 6px;
+      font-size:1.05rem;
+    }
+
+    .help-head p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.45;
+      font-size:.93rem;
+    }
+
+    .hint-levels{
+      padding:14px;
+      display:grid;
+      gap:10px;
+    }
+
+    .hint-box{
+      display:none;
+      padding:13px 14px;
+      border-radius:13px;
+      background:#0e132c;
+      border:1px solid rgba(255,255,255,.07);
+      color:#e8ebff;
+      line-height:1.5;
+    }
+
+    .hint-box.show{display:block}
+
+    .hint-box strong{
+      color:#ffffff;
+    }
+
+    .hint-actions{
+      padding:0 14px 16px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .mini-btn{
+      border:1px solid rgba(255,255,255,.09);
+      background:#20264f;
+      color:#eef1ff;
+      border-radius:11px;
+      padding:9px 11px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s;
+    }
+
+    .mini-btn:hover{
+      transform:translateY(-1px);
+      background:#2a3267;
+    }
+
+    .mini-btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .block-demo{
+      margin-top:8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      align-items:center;
+    }
+
+    .fake-block{
+      display:inline-flex;
+      align-items:center;
+      min-height:34px;
+      padding:7px 10px;
+      border-radius:8px;
+      background:#303866;
+      border:1px solid rgba(255,255,255,.12);
+      color:white;
+      font-weight:800;
+      font-size:.88rem;
+      box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);
+    }
+
+    .fake-block.var{background:#9d6b1f}
+    .fake-block.move{background:#405cc9}
+    .fake-block.ctrl{background:#b77a16}
+    .fake-block.sense{background:#358d9e}
+    .fake-block.rand{background:#4e9154}
+
+    .teacher-video{
+      margin-top:22px;
+      padding:18px;
+      border-radius:16px;
+      background:rgba(124,92,255,.08);
+      border:1px solid rgba(124,92,255,.22);
+    }
+
+    .teacher-video h3{
+      margin:0 0 8px;
+    }
+
+    .teacher-video p{
+      margin:0 0 14px;
+      color:#d9ddf8;
+      line-height:1.5;
+    }
+
+    .video-placeholder{
+      min-height:120px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      border-radius:14px;
+      background:#0c1026;
+      border:1px dashed rgba(255,255,255,.18);
+      color:#abb3d7;
+      padding:20px;
+    }
+
+
+    /* Entrega simbólica del proyecto Scratch */
+    .submit-wrap{
+      padding:36px;
+    }
+
+    .submit-wrap h2{
+      margin:0 0 8px;
+      font-size:clamp(1.8rem,4vw,2.7rem);
+    }
+
+    .submit-intro{
+      color:var(--muted);
+      line-height:1.6;
+      margin-bottom:24px;
+    }
+
+    .upload-zone{
+      border:2px dashed rgba(124,92,255,.42);
+      background:rgba(124,92,255,.07);
+      border-radius:20px;
+      padding:28px;
+      text-align:center;
+      transition:.2s;
+    }
+
+    .upload-zone.dragover{
+      background:rgba(124,92,255,.14);
+      border-color:rgba(124,92,255,.8);
+    }
+
+    .upload-icon{
+      font-size:3rem;
+      margin-bottom:8px;
+    }
+
+    .upload-zone h3{
+      margin:0 0 8px;
+    }
+
+    .upload-zone p{
+      color:var(--muted);
+      margin:0 0 16px;
+      line-height:1.5;
+    }
+
+    #sb3Input{
+      display:none;
+    }
+
+    .file-info{
+      display:none;
+      margin-top:18px;
+      padding:15px;
+      border-radius:14px;
+      background:#10152f;
+      border:1px solid rgba(255,255,255,.08);
+      text-align:left;
+    }
+
+    .file-info.show{display:block}
+
+    .file-name{
+      font-weight:900;
+      color:#ffffff;
+      word-break:break-word;
+    }
+
+    .file-meta{
+      color:var(--muted);
+      font-size:.9rem;
+      margin-top:4px;
+    }
+
+    .upload-error{
+      display:none;
+      margin-top:14px;
+      padding:12px 14px;
+      border-radius:12px;
+      background:rgba(255,107,122,.10);
+      border:1px solid rgba(255,107,122,.25);
+      color:#ffd5da;
+    }
+
+    .upload-error.show{display:block}
+
+    .progress-shell{
+      display:none;
+      margin-top:18px;
+      height:12px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#0e1229;
+      border:1px solid rgba(255,255,255,.07);
+    }
+
+    .progress-shell.show{display:block}
+
+    .progress-bar{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      transition:width .2s ease;
+    }
+
+    .upload-success{
+      display:none;
+      margin-top:18px;
+      padding:16px;
+      border-radius:14px;
+      background:rgba(36,214,162,.10);
+      border:1px solid rgba(36,214,162,.28);
+      color:#c8f9eb;
+      line-height:1.5;
+    }
+
+    .upload-success.show{display:block}
+
+    .submit-tips{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:18px;
+    }
+
+    .submit-tip{
+      padding:14px;
+      border-radius:14px;
+      background:#11162f;
+      border:1px solid rgba(255,255,255,.07);
+      color:#dfe3ff;
+      line-height:1.4;
+      font-size:.92rem;
+    }
+
+    .youtube-wrap{
+      margin-top:16px;
+    }
+
+    .youtube-frame{
+      position:relative;
+      width:100%;
+      aspect-ratio:16/9;
+      border-radius:14px;
+      overflow:hidden;
+      background:#0c1026;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .youtube-frame iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+    }
+
+    .youtube-placeholder{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:20px;
+      color:#abb3d7;
+      background:#0c1026;
+    }
+
+    .youtube-actions{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    /* Cierre metacognitivo */
+    .final-grid{
+      display:grid;
+      gap:14px;
+      margin-top:18px;
+    }
+
+    .final-q{
+      padding:17px;
+      border-radius:16px;
+      background:#151a38;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .final-q label{
+      display:block;
+      font-weight:900;
+      margin-bottom:9px;
+    }
+
+    .final-q textarea{
+      width:100%;
+      min-height:75px;
+      resize:vertical;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#0e1229;
+      color:white;
+      padding:12px;
+      outline:none;
+    }
+
+    .selfcheck{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:18px;
+    }
+
+    .selfitem{
+      padding:15px;
+      border-radius:14px;
+      background:#10152f;
+      border:1px solid rgba(255,255,255,.07);
+      text-align:center;
+    }
+
+    .selfitem button{
+      margin-top:10px;
+      width:100%;
+    }
+
+    .selfitem.done{
+      border-color:rgba(36,214,162,.6);
+      background:rgba(36,214,162,.08);
+    }
+
+    .mission-complete{
+      display:none;
+      margin-top:20px;
+      padding:18px;
+      border-radius:16px;
+      background:rgba(36,214,162,.10);
+      border:1px solid rgba(36,214,162,.28);
+      color:#c8f9eb;
+      line-height:1.5;
+    }
+
+    .mission-complete.show{display:block}
+
+    /* Pantalla desafío */
+    .challenge-wrap{
+      padding:36px;
+    }
+
+    .challenge-box{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:18px;
+      margin-top:22px;
+    }
+
+    .challenge-panel{
+      padding:20px;
+      border-radius:18px;
+      background:#151a38;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .challenge-panel h3{
+      margin-top:0;
+    }
+
+    .requirements{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .req{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:11px 12px;
+      border-radius:12px;
+      background:#0f142d;
+      border:1px solid rgba(255,255,255,.06);
+      color:#e6eaff;
+    }
+
+    .req span:first-child{
+      font-size:1.15rem;
+      line-height:1;
+    }
+
+    .freedom{
+      padding:16px;
+      border-radius:14px;
+      background:rgba(36,214,162,.08);
+      border:1px solid rgba(36,214,162,.22);
+      color:#c8f9eb;
+      line-height:1.5;
+    }
+
+    .help-preview{
+      margin-top:14px;
+      padding:14px;
+      border-radius:14px;
+      background:rgba(255,200,87,.08);
+      border:1px solid rgba(255,200,87,.22);
+      color:#ffeab6;
+      line-height:1.5;
+    }
+
+    @media (max-width:850px){
+      .game-layout{grid-template-columns:1fr}
+      .tool-grid{grid-template-columns:1fr}
+      .challenge-box{grid-template-columns:1fr}
+      .help-grid{grid-template-columns:1fr}
+      .selfcheck{grid-template-columns:1fr}
+      .submit-tips{grid-template-columns:1fr}
+      .side-card{order:-1}
+      .hero{padding:42px 24px}
+      .reflection{padding:24px}
+      #gameArea{min-height:360px}
+    }
+
+    @media (max-width:520px){
+      .screen{padding:12px}
+      #basket{font-size:60px;width:90px}
+      #fruit{font-size:38px}
+      #gameArea{min-height:440px;aspect-ratio:auto}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA 1: PORTADA -->
+  <section id="startScreen" class="screen active">
+    <div class="card hero">
+      <span class="badge">⚠ Sistema con fallas detectadas</span>
+      <h1>MISIÓN CESTA</h1>
+      <p class="subtitle">
+        Este juego debería funcionar correctamente... pero algo salió mal.
+        Tu misión será probarlo, observar qué sucede y descubrir qué conocimientos
+        de Scratch podrían ayudar a repararlo.
+      </p>
+
+      <div class="guide">
+        <div class="avatar">🤖</div>
+        <div>
+          <strong>BYTE — Asistente de programación</strong>
+          <p>
+            “Alguien modificó este juego y ahora tiene varios errores.
+            No voy a decirte cuáles son. Primero necesito que lo pruebes como un verdadero programador.”
+          </p>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn primary" id="startBtn">🎮 PROBAR EL JUEGO</button>
+      </div>
+
+      <p class="tiny">Observá con atención. No todo lo que parece normal realmente funciona bien.</p>
+    </div>
+  </section>
+
+  <!-- PANTALLA 2: JUEGO -->
+  <section id="gameScreen" class="screen">
+    <div class="game-layout">
+      <div class="game-card">
+        <div class="game-top">
+          <div class="game-title">🍎 Cesta Frutal — versión 0.1</div>
+          <div class="score">Puntos: <span id="score">0</span></div>
+        </div>
+
+        <div id="gameArea" tabindex="0" aria-label="Área del juego">
+          <div class="cloud c1">☁️</div>
+          <div class="cloud c2">☁️</div>
+          <div id="fruit">🍎</div>
+          <div id="basket">🧺</div>
+          <div class="ground-line"></div>
+
+          <div id="gameMessage" class="game-message">
+            La prueba terminó. ¿El juego se comportó como esperabas?
+          </div>
+        </div>
+      </div>
+
+      <aside class="side-card">
+        <h2>🎯 Objetivo esperado</h2>
+        <p>
+          Mové la cesta para atrapar la fruta antes de que llegue al suelo.
+          Cada fruta atrapada debería sumar puntos.
+        </p>
+
+        <div class="keybox" aria-label="Teclas de movimiento">
+          <div class="key">←</div>
+          <div class="key">→</div>
+        </div>
+
+        <div class="mission-note">
+          <strong>No busques el código todavía.</strong><br>
+          Primero comportate como tester: probá, observá y hacé hipótesis sobre lo que está fallando.
+        </div>
+
+        <div class="status"><span class="dot"></span> Estado: errores sin resolver</div>
+
+        <div class="side-actions">
+          <button class="btn secondary" id="restartBtn">↻ Reiniciar prueba</button>
+          <button class="btn success" id="foundBtn">✓ Ya encontré cosas raras</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- PANTALLA 3: REGISTRO DE HIPÓTESIS -->
+  <section id="reflectionScreen" class="screen">
+    <div class="card reflection">
+      <span class="badge">🔎 Fase de diagnóstico</span>
+      <h2>¿Qué pensás que está fallando?</h2>
+      <p class="intro">
+        Todavía no vamos a arreglar el juego. Primero registrá tus sospechas.
+        No importa si no estás completamente seguro: en programación, una hipótesis es un buen punto de partida.
+      </p>
+
+      <div class="question">
+        <label for="q1">1. ¿Qué comportamiento extraño observaste en la cesta?</label>
+        <textarea id="q1" placeholder="Escribí lo que observaste..."></textarea>
+      </div>
+
+      <div class="question">
+        <label for="q2">2. ¿Qué sucede con la fruta cuando llega abajo?</label>
+        <textarea id="q2" placeholder="Escribí lo que observaste..."></textarea>
+      </div>
+
+      <div class="question">
+        <label for="q3">3. ¿Qué sucede con el puntaje?</label>
+        <textarea id="q3" placeholder="Escribí lo que observaste..."></textarea>
+      </div>
+
+      <div class="question">
+        <label for="q4">4. Si el juego continuara, ¿hay algo que podría hacerse menos predecible?</label>
+        <textarea id="q4" placeholder="Pensá en la aparición de la fruta..."></textarea>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn secondary" id="backBtn">← Volver a probar</button>
+        <button class="btn primary" id="saveBtn">💾 Guardar mis hipótesis</button>
+        <button class="btn success" id="toToolsBtn" style="display:none">🧰 Ir a la caja de herramientas</button>
+      </div>
+
+      <div id="savedMsg" class="saved">
+        ✓ Hipótesis registradas en este equipo. El siguiente paso será relacionar estos problemas con herramientas de Scratch.
+      </div>
+
+      <div id="diagnosisValidation" class="validation-message">
+        ⚠ Para continuar, completá las cuatro respuestas de la fase de diagnóstico.
+      </div>
+
+      <p class="footer-note">
+        MDD educativo · Primera fase: conflicto cognitivo y recuperación de conocimientos previos
+      </p>
+    </div>
+  </section>
+
+
+  <!-- PANTALLA 4: CAJA DE HERRAMIENTAS -->
+  <section id="toolboxScreen" class="screen">
+    <div class="card toolbox-wrap">
+      <span class="badge">🧰 Caja de herramientas</span>
+      <h2>¿Qué concepto podría reparar cada problema?</h2>
+      <p class="toolbox-intro">
+        Ahora conectá cada falla con una idea de Scratch. No estás eligiendo un bloque exacto:
+        estás pensando <strong>qué conocimiento</strong> necesitarías para resolver el problema.
+      </p>
+
+      <div class="tool-grid">
+        <div class="problem-card" data-problem="movement">
+          <h3>🧺 Problema 1: la cesta no se mueve como debería</h3>
+          <p>Las flechas izquierda y derecha no producen un movimiento horizontal.</p>
+          <div class="choice-grid">
+            <button class="tool-choice" data-value="variables">📊 Variables</button>
+            <button class="tool-choice" data-value="xy">📍 Coordenadas X / Y</button>
+            <button class="tool-choice" data-value="costumes">🎭 Disfraces</button>
+          </div>
+        </div>
+
+        <div class="problem-card" data-problem="respawn">
+          <h3>🍎 Problema 2: la fruta llega abajo y todo se detiene</h3>
+          <p>Necesitamos que el juego siga funcionando una y otra vez.</p>
+          <div class="choice-grid">
+            <button class="tool-choice" data-value="sound">🔊 Sonidos</button>
+            <button class="tool-choice" data-value="loops">🔁 Bucles y condiciones</button>
+            <button class="tool-choice" data-value="costumes">🎭 Disfraces</button>
+          </div>
+        </div>
+
+        <div class="problem-card" data-problem="score">
+          <h3>🏆 Problema 3: atrapar la fruta no cambia los puntos</h3>
+          <p>El juego debería recordar y actualizar una cantidad.</p>
+          <div class="choice-grid">
+            <button class="tool-choice" data-value="xy">📍 Coordenadas X / Y</button>
+            <button class="tool-choice" data-value="variables">📊 Variables</button>
+            <button class="tool-choice" data-value="broadcast">📨 Mensajes</button>
+          </div>
+        </div>
+
+        <div class="problem-card" data-problem="random">
+          <h3>🎲 Problema 4: la fruta siempre aparece en el mismo lugar</h3>
+          <p>Queremos que cada caída sea un poco diferente e impredecible.</p>
+          <div class="choice-grid">
+            <button class="tool-choice" data-value="random">🎲 Posición / número aleatorio</button>
+            <button class="tool-choice" data-value="sound">🔊 Sonidos</button>
+            <button class="tool-choice" data-value="costumes">🎭 Disfraces</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-row">
+        <div id="toolProgress" class="progress-pill">Conexiones elegidas: 0 / 4</div>
+        <div class="btnrow" style="margin-top:0">
+          <button class="btn secondary" id="toolsBackBtn">← Volver</button>
+          <button class="btn primary" id="checkToolsBtn">🔎 Comprobar conexiones</button>
+        </div>
+      </div>
+
+      <div id="toolFeedback" class="feedback-box"></div>
+
+      <div class="btnrow">
+        <button class="btn success" id="toChallengeBtn" style="display:none">🚀 Ver el desafío en Scratch</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA 5: DESAFÍO -->
+  <section id="challengeScreen" class="screen">
+    <div class="card challenge-wrap">
+      <span class="badge">🚀 Misión desbloqueada</span>
+      <h2>Ahora te toca construirlo en Scratch</h2>
+      <p class="challenge-intro">
+        Ya identificaste varias ideas importantes. Ahora vas a usarlas para crear
+        <strong>tu propia versión</strong> del juego.
+      </p>
+
+      <div class="challenge-box">
+        <div class="challenge-panel">
+          <h3>🎮 Requisitos mínimos</h3>
+          <div class="requirements">
+            <div class="req"><span>↔️</span><span>El jugador debe controlar un objeto que se mueva horizontalmente.</span></div>
+            <div class="req"><span>⬇️</span><span>Otro objeto debe caer desde la parte superior de la pantalla.</span></div>
+            <div class="req"><span>🎲</span><span>La posición desde la que cae debe variar.</span></div>
+            <div class="req"><span>🤝</span><span>Cuando los objetos se toquen debe suceder algo.</span></div>
+            <div class="req"><span>🏆</span><span>Usá al menos una variable, por ejemplo, <strong>Puntos</strong>.</span></div>
+            <div class="req"><span>🔁</span><span>El juego debe continuar después de cada intento.</span></div>
+          </div>
+        </div>
+
+        <div class="challenge-panel">
+          <h3>✨ Tu juego, tus decisiones</h3>
+          <div class="freedom">
+            No tiene que ser una cesta con frutas. Puede ser una nave atrapando estrellas,
+            un gato buscando peces, un personaje juntando monedas o cualquier idea que quieras.
+          </div>
+
+          <div class="help-preview">
+            <strong>¿Te trabaste?</strong><br>
+            No hace falta pedir la solución completa. Podés usar un sistema de ayudas graduadas:
+            primero una orientación pequeña, después una pista más concreta y, solo si lo necesitás,
+            una ayuda visual.
+          </div>
+
+          <div class="btnrow" style="justify-content:flex-start">
+            <button class="btn secondary" id="challengeBackBtn">← Revisar herramientas</button>
+            <button class="btn primary" id="helpBtn">🧠 Necesito una pista</button>
+            <button class="btn success" id="finishBtn">📤 Terminé mi juego: entregar proyecto</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">
+        La misión no es copiar un juego: es resolver un problema usando lo que ya sabés de Scratch.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- PANTALLA 6: SISTEMA DE PISTAS -->
+  <section id="helpScreen" class="screen">
+    <div class="card help-wrap">
+      <span class="badge">🧠 Zona de ayuda</span>
+      <h2>No te doy la solución de una vez</h2>
+      <p class="help-intro">
+        Elegí solamente el problema en el que estás trabado. Abrí una pista por vez y volvé a Scratch
+        después de cada una. La idea es que uses <strong>la menor ayuda necesaria</strong>.
+      </p>
+
+      <div class="help-grid">
+
+        <div class="help-card" data-help="move">
+          <div class="help-head">
+            <h3>🧺 No logro mover la cesta correctamente</h3>
+            <p>Quiero que se desplace hacia la izquierda y la derecha.</p>
+          </div>
+          <div class="hint-levels">
+            <div class="hint-box hint1">
+              <strong>Pista 1 · Pensá en los ejes</strong><br>
+              Si un objeto se mueve de izquierda a derecha, ¿qué coordenada cambia: X o Y?
+            </div>
+            <div class="hint-box hint2">
+              <strong>Pista 2 · Relacioná tecla y movimiento</strong><br>
+              Probá detectar cada flecha por separado y cambiar la posición horizontal con valores positivos o negativos.
+            </div>
+            <div class="hint-box hint3">
+              <strong>Ayuda visual</strong>
+              <div class="block-demo">
+                <span class="fake-block sense">al presionar →</span>
+                <span>→</span>
+                <span class="fake-block move">cambiar x por 10</span>
+              </div>
+              <div class="block-demo">
+                <span class="fake-block sense">al presionar ←</span>
+                <span>→</span>
+                <span class="fake-block move">cambiar x por -10</span>
+              </div>
+            </div>
+          </div>
+          <div class="hint-actions">
+            <button class="mini-btn next-hint">Mostrar pista 1</button>
+          </div>
+        </div>
+
+        <div class="help-card" data-help="fall">
+          <div class="help-head">
+            <h3>🍎 La fruta cae una vez y no continúa</h3>
+            <p>Necesito que vuelva arriba y siga cayendo.</p>
+          </div>
+          <div class="hint-levels">
+            <div class="hint-box hint1">
+              <strong>Pista 1 · Pensá en repetir</strong><br>
+              ¿Qué estructura de Scratch permite que una acción ocurra muchas veces?
+            </div>
+            <div class="hint-box hint2">
+              <strong>Pista 2 · Detectá el límite</strong><br>
+              El programa puede comprobar si la fruta llegó a la parte inferior y, cuando eso pase, enviarla nuevamente arriba.
+            </div>
+            <div class="hint-box hint3">
+              <strong>Ayuda visual</strong>
+              <div class="block-demo">
+                <span class="fake-block ctrl">por siempre</span>
+                <span class="fake-block move">cambiar y por -5</span>
+                <span class="fake-block ctrl">si llegó abajo...</span>
+                <span class="fake-block move">ir arriba</span>
+              </div>
+            </div>
+          </div>
+          <div class="hint-actions">
+            <button class="mini-btn next-hint">Mostrar pista 1</button>
+          </div>
+        </div>
+
+        <div class="help-card" data-help="score">
+          <div class="help-head">
+            <h3>🏆 Atrapo la fruta pero no suma puntos</h3>
+            <p>Quiero guardar y actualizar un puntaje.</p>
+          </div>
+          <div class="hint-levels">
+            <div class="hint-box hint1">
+              <strong>Pista 1 · Algo debe guardar el valor</strong><br>
+              ¿Qué elemento de Scratch sirve para almacenar un número que puede ir cambiando?
+            </div>
+            <div class="hint-box hint2">
+              <strong>Pista 2 · Necesitás dos ideas</strong><br>
+              Primero detectá cuándo la fruta toca la cesta. Después modificá el valor guardado.
+            </div>
+            <div class="hint-box hint3">
+              <strong>Ayuda visual</strong>
+              <div class="block-demo">
+                <span class="fake-block ctrl">si</span>
+                <span class="fake-block sense">tocando cesta?</span>
+                <span>→</span>
+                <span class="fake-block var">cambiar Puntos por 1</span>
+              </div>
+            </div>
+          </div>
+          <div class="hint-actions">
+            <button class="mini-btn next-hint">Mostrar pista 1</button>
+          </div>
+        </div>
+
+        <div class="help-card" data-help="random">
+          <div class="help-head">
+            <h3>🎲 La fruta siempre cae desde el mismo lugar</h3>
+            <p>Quiero que cada caída sea un poco diferente.</p>
+          </div>
+          <div class="hint-levels">
+            <div class="hint-box hint1">
+              <strong>Pista 1 · Evitá elegir siempre el mismo número</strong><br>
+              Scratch puede generar valores diferentes automáticamente.
+            </div>
+            <div class="hint-box hint2">
+              <strong>Pista 2 · Aplicalo a la posición horizontal</strong><br>
+              Cuando la fruta vuelva arriba, su coordenada X podría tomar un valor aleatorio dentro de un rango.
+            </div>
+            <div class="hint-box hint3">
+              <strong>Ayuda visual</strong>
+              <div class="block-demo">
+                <span class="fake-block move">ir a x:</span>
+                <span class="fake-block rand">número al azar entre -200 y 200</span>
+                <span class="fake-block move">y: 170</span>
+              </div>
+            </div>
+          </div>
+          <div class="hint-actions">
+            <button class="mini-btn next-hint">Mostrar pista 1</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="teacher-video">
+        <h3>🎥 Último recurso: tutorial del docente</h3>
+        <p>
+          Si después de las tres pistas seguís sin poder avanzar, podés recurrir al tutorial.
+          Podés verlo directamente acá o abrirlo en YouTube.
+        </p>
+
+        <div class="youtube-wrap">
+          <div class="youtube-frame">
+            <iframe
+              id="youtubeFrame"
+              title="Tutorial del docente"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>
+
+            <div id="youtubePlaceholder" class="youtube-placeholder">
+              <div>
+                <div style="font-size:2rem;margin-bottom:8px">▶️</div>
+                <strong>Tutorial todavía no configurado</strong><br>
+                Cuando tengas el enlace de YouTube, lo conectamos en segundos.
+              </div>
+            </div>
+          </div>
+
+          <div class="youtube-actions">
+            <button class="btn primary" id="openYoutubeBtn" disabled>▶ Abrir tutorial en YouTube</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn primary" id="returnChallengeBtn">← Volver a mi desafío</button>
+      </div>
+
+      <p class="footer-note">
+        Usá solamente la ayuda que necesites. Resolver parte del problema por tu cuenta también forma parte del aprendizaje.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- PANTALLA 7: ENTREGA DEL PROYECTO -->
+  <section id="submitScreen" class="screen">
+    <div class="card submit-wrap">
+      <span class="badge">📤 Entrega del proyecto</span>
+      <h2>Guardá tu juego y entregalo</h2>
+      <p class="submit-intro">
+        Primero descargá tu proyecto desde Scratch como archivo <strong>.sb3</strong>.
+        Después volvé a esta página y seleccioná el archivo para completar la entrega.
+      </p>
+
+      <div class="submit-tips">
+        <div class="submit-tip"><strong>1.</strong> En Scratch, guardá o descargá el proyecto en tu computadora.</div>
+        <div class="submit-tip"><strong>2.</strong> Buscá el archivo con extensión <strong>.sb3</strong>.</div>
+        <div class="submit-tip"><strong>3.</strong> Seleccionalo acá para completar la misión.</div>
+      </div>
+
+      <div id="uploadZone" class="upload-zone">
+        <div class="upload-icon">📁</div>
+        <h3>Seleccioná tu archivo de Scratch</h3>
+        <p>Solo se aceptan proyectos con extensión <strong>.sb3</strong>.</p>
+
+        <label class="btn primary" for="sb3Input">Elegir archivo .sb3</label>
+        <input id="sb3Input" type="file" accept=".sb3,application/octet-stream">
+
+        <div id="fileInfo" class="file-info">
+          <div class="file-name" id="fileName"></div>
+          <div class="file-meta" id="fileMeta"></div>
+        </div>
+
+        <div id="uploadError" class="upload-error"></div>
+
+        <div id="progressShell" class="progress-shell">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div id="uploadSuccess" class="upload-success">
+          <strong>✅ Proyecto recibido correctamente.</strong><br>
+          Ya podés continuar con el cierre de la misión.
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn secondary" id="submitBackBtn">← Volver al desafío</button>
+        <button class="btn success" id="continueAfterUploadBtn" disabled>Continuar al cierre →</button>
+      </div>
+
+      <p class="footer-note">
+        Misión Cesta · Entrega del proyecto Scratch
+      </p>
+    </div>
+  </section>
+
+  <!-- PANTALLA 8: CIERRE METACOGNITIVO -->
+  <section id="finalScreen" class="screen">
+    <div class="card final-wrap">
+      <span class="badge">🏁 Cierre de misión</span>
+      <h2>Antes de terminar, pensá como programador</h2>
+      <p class="final-intro">
+        Programar no es solamente conseguir que algo funcione. También implica poder explicar
+        qué hiciste, qué problema encontraste y cómo lograste resolverlo.
+      </p>
+
+      <div class="selfcheck">
+        <div class="selfitem">
+          <strong>🎮 Mi juego funciona</strong>
+          <button class="mini-btn self-btn">Marcar</button>
+        </div>
+        <div class="selfitem">
+          <strong>🧪 Lo probé y corregí errores</strong>
+          <button class="mini-btn self-btn">Marcar</button>
+        </div>
+        <div class="selfitem">
+          <strong>✨ Agregué una decisión propia</strong>
+          <button class="mini-btn self-btn">Marcar</button>
+        </div>
+      </div>
+
+      <div class="final-grid">
+        <div class="final-q">
+          <label for="final1">1. ¿Qué conocimiento de Scratch fue el más importante para tu juego?</label>
+          <textarea id="final1" placeholder="Por ejemplo: variables, coordenadas, bucles..."></textarea>
+        </div>
+
+        <div class="final-q">
+          <label for="final2">2. ¿Cuál fue el problema más difícil que tuviste que resolver?</label>
+          <textarea id="final2" placeholder="Contá qué pasó..."></textarea>
+        </div>
+
+        <div class="final-q">
+          <label for="final3">3. ¿Qué hiciste cuando algo no funcionó como esperabas?</label>
+          <textarea id="final3" placeholder="¿Probaste otra idea? ¿Pediste una pista? ¿Revisaste los bloques?..."></textarea>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn secondary" id="finalBackBtn">← Volver al desafío</button>
+        <button class="btn success" id="completeMissionBtn">🏆 Finalizar misión</button>
+      </div>
+
+      <div id="finalValidation" class="validation-message">
+        ⚠ Para finalizar la misión, completá las tres preguntas de reflexión.
+      </div>
+
+      <div id="missionComplete" class="mission-complete">
+        <strong>🎉 ¡Misión completada!</strong><br>
+        Hoy no solamente construiste un juego: identificaste errores, formulaste hipótesis,
+        elegiste herramientas, probaste soluciones y reflexionaste sobre tu propio proceso.
+      </div>
+
+      <p class="footer-note">
+        MDD educativo · Cierre metacognitivo y reflexión sobre estrategias de resolución
+      </p>
+    </div>
+  </section>
+
+<script>
+  const startScreen = document.getElementById("startScreen");
+  const gameScreen = document.getElementById("gameScreen");
+  const reflectionScreen = document.getElementById("reflectionScreen");
+  const toolboxScreen = document.getElementById("toolboxScreen");
+  const challengeScreen = document.getElementById("challengeScreen");
+  const helpScreen = document.getElementById("helpScreen");
+  const submitScreen = document.getElementById("submitScreen");
+  const finalScreen = document.getElementById("finalScreen");
+
+  const startBtn = document.getElementById("startBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const foundBtn = document.getElementById("foundBtn");
+  const backBtn = document.getElementById("backBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const toToolsBtn = document.getElementById("toToolsBtn");
+  const toolsBackBtn = document.getElementById("toolsBackBtn");
+  const checkToolsBtn = document.getElementById("checkToolsBtn");
+  const toChallengeBtn = document.getElementById("toChallengeBtn");
+  const challengeBackBtn = document.getElementById("challengeBackBtn");
+  const helpBtn = document.getElementById("helpBtn");
+  const finishBtn = document.getElementById("finishBtn");
+  const returnChallengeBtn = document.getElementById("returnChallengeBtn");
+  const submitBackBtn = document.getElementById("submitBackBtn");
+  const continueAfterUploadBtn = document.getElementById("continueAfterUploadBtn");
+  const sb3Input = document.getElementById("sb3Input");
+  const uploadZone = document.getElementById("uploadZone");
+  const fileInfo = document.getElementById("fileInfo");
+  const fileName = document.getElementById("fileName");
+  const fileMeta = document.getElementById("fileMeta");
+  const uploadError = document.getElementById("uploadError");
+  const progressShell = document.getElementById("progressShell");
+  const progressBar = document.getElementById("progressBar");
+  const uploadSuccess = document.getElementById("uploadSuccess");
+  const youtubeFrame = document.getElementById("youtubeFrame");
+  const youtubePlaceholder = document.getElementById("youtubePlaceholder");
+  const openYoutubeBtn = document.getElementById("openYoutubeBtn");
+  const finalBackBtn = document.getElementById("finalBackBtn");
+  const completeMissionBtn = document.getElementById("completeMissionBtn");
+  const missionComplete = document.getElementById("missionComplete");
+  const toolFeedback = document.getElementById("toolFeedback");
+  const toolProgress = document.getElementById("toolProgress");
+  const savedMsg = document.getElementById("savedMsg");
+  const diagnosisValidation = document.getElementById("diagnosisValidation");
+  const finalValidation = document.getElementById("finalValidation");
+
+  const gameArea = document.getElementById("gameArea");
+  const fruit = document.getElementById("fruit");
+  const basket = document.getElementById("basket");
+  const scoreEl = document.getElementById("score");
+  const gameMessage = document.getElementById("gameMessage");
+
+  let running = false;
+  let fruitY = 20;
+  let basketBottom = 28;
+  let animationId = null;
+  let lastTime = 0;
+
+  function showScreen(screen){
+    [startScreen, gameScreen, reflectionScreen, toolboxScreen, challengeScreen, helpScreen, submitScreen, finalScreen].forEach(s => s.classList.remove("active"));
+    screen.classList.add("active");
+  }
+
+  function resetGame(){
+    cancelAnimationFrame(animationId);
+    running = true;
+    lastTime = 0;
+
+    fruitY = 20;
+    basketBottom = 28;
+
+    // Error intencional: la fruta siempre vuelve exactamente al mismo punto horizontal.
+    fruit.style.left = "50%";
+    fruit.style.top = fruitY + "px";
+
+    // Error intencional: el puntaje nunca cambia.
+    scoreEl.textContent = "0";
+
+    basket.style.left = "50%";
+    basket.style.bottom = basketBottom + "px";
+
+    gameMessage.classList.remove("show");
+    gameArea.focus();
+
+    animationId = requestAnimationFrame(gameLoop);
+  }
+
+  function gameLoop(timestamp){
+    if(!running) return;
+
+    if(!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+
+    const areaHeight = gameArea.clientHeight;
+    const fruitHeight = fruit.offsetHeight;
+
+    fruitY += 135 * dt;
+    fruit.style.top = fruitY + "px";
+
+    checkCollision();
+
+    // Error intencional: al llegar al suelo, la fruta se detiene y NO reaparece.
+    if(fruitY + fruitHeight >= areaHeight - 8){
+      fruitY = areaHeight - fruitHeight - 8;
+      fruit.style.top = fruitY + "px";
+      running = false;
+      gameMessage.classList.add("show");
+      return;
+    }
+
+    animationId = requestAnimationFrame(gameLoop);
+  }
+
+  function checkCollision(){
+    const f = fruit.getBoundingClientRect();
+    const b = basket.getBoundingClientRect();
+
+    const overlap =
+      f.left < b.right &&
+      f.right > b.left &&
+      f.top < b.bottom &&
+      f.bottom > b.top;
+
+    if(overlap){
+      // Error intencional: atrapar la fruta NO incrementa la variable "Puntos".
+      // También dejamos que la fruta siga cayendo para que el comportamiento resulte sospechoso.
+    }
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if(!gameScreen.classList.contains("active")) return;
+
+    const maxBottom = Math.max(28, gameArea.clientHeight - basket.offsetHeight - 20);
+
+    // Error intencional:
+    // Las flechas izquierda/derecha deberían modificar X,
+    // pero aquí modifican la posición vertical (Y/bottom).
+    if(e.key === "ArrowLeft"){
+      e.preventDefault();
+      basketBottom = Math.max(28, basketBottom - 24);
+      basket.style.bottom = basketBottom + "px";
+    }
+
+    if(e.key === "ArrowRight"){
+      e.preventDefault();
+      basketBottom = Math.min(maxBottom, basketBottom + 24);
+      basket.style.bottom = basketBottom + "px";
+    }
+  });
+
+  startBtn.addEventListener("click", () => {
+    showScreen(gameScreen);
+    setTimeout(resetGame, 100);
+  });
+
+  restartBtn.addEventListener("click", resetGame);
+
+  foundBtn.addEventListener("click", () => {
+    cancelAnimationFrame(animationId);
+    running = false;
+    showScreen(reflectionScreen);
+  });
+
+  backBtn.addEventListener("click", () => {
+    showScreen(gameScreen);
+    setTimeout(resetGame, 100);
+  });
+
+  saveBtn.addEventListener("click", () => {
+    const fields = [
+      document.getElementById("q1"),
+      document.getElementById("q2"),
+      document.getElementById("q3"),
+      document.getElementById("q4")
+    ];
+
+    fields.forEach(field => field.classList.remove("field-error"));
+    diagnosisValidation.classList.remove("show");
+    savedMsg.classList.remove("show");
+    toToolsBtn.style.display = "none";
+
+    const emptyFields = fields.filter(field => field.value.trim() === "");
+
+    if(emptyFields.length > 0){
+      emptyFields.forEach(field => field.classList.add("field-error"));
+      diagnosisValidation.classList.add("show");
+      emptyFields[0].focus();
+      return;
+    }
+
+    const answers = {
+      cesta: fields[0].value.trim(),
+      fruta: fields[1].value.trim(),
+      puntaje: fields[2].value.trim(),
+      impredecible: fields[3].value.trim()
+    };
+
+    localStorage.setItem("misionCestaHipotesis", JSON.stringify(answers));
+    savedMsg.classList.add("show");
+    toToolsBtn.style.display = "inline-block";
+  });
+
+  ["q1","q2","q3","q4"].forEach(id => {
+    const field = document.getElementById(id);
+    field.addEventListener("input", () => {
+      if(field.value.trim() !== ""){
+        field.classList.remove("field-error");
+      }
+
+      const allComplete = ["q1","q2","q3","q4"].every(qid =>
+        document.getElementById(qid).value.trim() !== ""
+      );
+
+      if(allComplete){
+        diagnosisValidation.classList.remove("show");
+      }
+    });
+  });
+
+  toToolsBtn.addEventListener("click", () => {
+    showScreen(toolboxScreen);
+  });
+
+  toolsBackBtn.addEventListener("click", () => {
+    showScreen(reflectionScreen);
+  });
+
+  challengeBackBtn.addEventListener("click", () => {
+    showScreen(toolboxScreen);
+  });
+
+  toChallengeBtn.addEventListener("click", () => {
+    showScreen(challengeScreen);
+  });
+
+  helpBtn.addEventListener("click", () => {
+    showScreen(helpScreen);
+  });
+
+  returnChallengeBtn.addEventListener("click", () => {
+    showScreen(challengeScreen);
+  });
+
+  finishBtn.addEventListener("click", () => {
+    showScreen(submitScreen);
+  });
+
+  submitBackBtn.addEventListener("click", () => {
+    showScreen(challengeScreen);
+  });
+
+  continueAfterUploadBtn.addEventListener("click", () => {
+    showScreen(finalScreen);
+  });
+
+  finalBackBtn.addEventListener("click", () => {
+    showScreen(submitScreen);
+  });
+
+  const answersTools = {
+    movement: "xy",
+    respawn: "loops",
+    score: "variables",
+    random: "random"
+  };
+
+  const selectedTools = {};
+
+  document.querySelectorAll(".problem-card").forEach(card => {
+    card.querySelectorAll(".tool-choice").forEach(btn => {
+      btn.addEventListener("click", () => {
+        card.querySelectorAll(".tool-choice").forEach(b => {
+          b.classList.remove("selected", "correct", "wrong");
+        });
+        btn.classList.add("selected");
+        selectedTools[card.dataset.problem] = btn.dataset.value;
+
+        const count = Object.keys(selectedTools).length;
+        toolProgress.textContent = `Conexiones elegidas: ${count} / 4`;
+        toolFeedback.classList.remove("show");
+        toChallengeBtn.style.display = "none";
+      });
+    });
+  });
+
+  checkToolsBtn.addEventListener("click", () => {
+    const chosen = Object.keys(selectedTools).length;
+
+    if(chosen < 4){
+      toolFeedback.innerHTML =
+        "💡 <strong>Todavía faltan conexiones.</strong> Elegí una herramienta para cada uno de los cuatro problemas antes de comprobar.";
+      toolFeedback.classList.add("show");
+      return;
+    }
+
+    let correct = 0;
+
+    document.querySelectorAll(".problem-card").forEach(card => {
+      const problem = card.dataset.problem;
+      const picked = selectedTools[problem];
+
+      card.querySelectorAll(".tool-choice").forEach(btn => {
+        btn.classList.remove("correct", "wrong");
+        if(btn.classList.contains("selected")){
+          if(btn.dataset.value === answersTools[problem]){
+            btn.classList.add("correct");
+            correct++;
+          }else{
+            btn.classList.add("wrong");
+          }
+        }
+      });
+    });
+
+    if(correct === 4){
+      toolFeedback.innerHTML =
+        "✅ <strong>¡Las cuatro conexiones tienen sentido!</strong> Ya identificaste qué conocimientos podrían ayudarte a reconstruir el juego. Ahora podés pasar al desafío en Scratch.";
+      toChallengeBtn.style.display = "inline-block";
+    }else{
+      toolFeedback.innerHTML =
+        `🧠 Tenés <strong>${correct} de 4</strong> conexiones correctas. Revisá las marcadas en rojo y pensá qué necesita realmente cada problema. No hace falta adivinar bloques exactos: pensá en el concepto.`;
+      toChallengeBtn.style.display = "none";
+    }
+
+    toolFeedback.classList.add("show");
+  });
+
+
+
+  /*
+    CONFIGURACIÓN DEL TUTORIAL
+    Cuando tengas tu video de YouTube, pegá acá la URL completa.
+    Ejemplos válidos:
+    https://www.youtube.com/watch?v=XXXXXXXXXXX
+    https://youtu.be/XXXXXXXXXXX
+  */
+  const YOUTUBE_URL = "";
+
+  function getYoutubeId(url){
+    if(!url) return null;
+
+    try{
+      const u = new URL(url);
+
+      if(u.hostname.includes("youtu.be")){
+        return u.pathname.replace("/", "").split("?")[0] || null;
+      }
+
+      if(u.hostname.includes("youtube.com")){
+        if(u.pathname.startsWith("/embed/")){
+          return u.pathname.split("/embed/")[1].split("/")[0] || null;
+        }
+        return u.searchParams.get("v");
+      }
+    }catch(e){}
+
+    return null;
+  }
+
+  function configureYoutube(){
+    const id = getYoutubeId(YOUTUBE_URL);
+
+    if(!id){
+      youtubeFrame.removeAttribute("src");
+      youtubePlaceholder.style.display = "grid";
+      openYoutubeBtn.disabled = true;
+      return;
+    }
+
+    youtubeFrame.src = `https://www.youtube-nocookie.com/embed/${id}`;
+    youtubePlaceholder.style.display = "none";
+    openYoutubeBtn.disabled = false;
+
+    openYoutubeBtn.addEventListener("click", () => {
+      window.open(YOUTUBE_URL, "_blank", "noopener,noreferrer");
+    });
+  }
+
+  configureYoutube();
+
+  // Entrega simbólica del .sb3.
+  let selectedSb3 = null;
+
+  function humanFileSize(bytes){
+    if(bytes < 1024) return bytes + " B";
+    if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function resetUploadUI(){
+    uploadError.classList.remove("show");
+    uploadSuccess.classList.remove("show");
+    progressShell.classList.remove("show");
+    progressBar.style.width = "0%";
+    continueAfterUploadBtn.disabled = true;
+  }
+
+  function handleSb3File(file){
+    resetUploadUI();
+
+    if(!file){
+      selectedSb3 = null;
+      fileInfo.classList.remove("show");
+      return;
+    }
+
+    const valid = file.name.toLowerCase().endsWith(".sb3");
+
+    if(!valid){
+      selectedSb3 = null;
+      fileInfo.classList.remove("show");
+      uploadError.textContent = "⚠ El archivo seleccionado no parece ser un proyecto de Scratch (.sb3).";
+      uploadError.classList.add("show");
+      return;
+    }
+
+    selectedSb3 = file;
+    fileName.textContent = "📄 " + file.name;
+    fileMeta.textContent = "Tamaño: " + humanFileSize(file.size) + " · Proyecto Scratch";
+    fileInfo.classList.add("show");
+
+    progressShell.classList.add("show");
+
+    let progress = 0;
+    const timer = setInterval(() => {
+      progress += Math.floor(Math.random() * 18) + 10;
+      if(progress >= 100){
+        progress = 100;
+        clearInterval(timer);
+
+        setTimeout(() => {
+          uploadSuccess.classList.add("show");
+          continueAfterUploadBtn.disabled = false;
+
+          // Guardamos solo un comprobante local, no el archivo.
+          localStorage.setItem("misionCestaEntrega", JSON.stringify({
+            name: file.name,
+            size: file.size,
+            completed: true
+          }));
+        }, 250);
+      }
+
+      progressBar.style.width = progress + "%";
+    }, 150);
+  }
+
+  sb3Input.addEventListener("change", () => {
+    handleSb3File(sb3Input.files[0]);
+  });
+
+  ["dragenter","dragover"].forEach(evt => {
+    uploadZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      uploadZone.classList.add("dragover");
+    });
+  });
+
+  ["dragleave","drop"].forEach(evt => {
+    uploadZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove("dragover");
+    });
+  });
+
+  uploadZone.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files[0];
+    handleSb3File(file);
+  });
+
+  // Pistas progresivas: una por vez.
+  document.querySelectorAll(".help-card").forEach(card => {
+    const button = card.querySelector(".next-hint");
+    const hints = [
+      card.querySelector(".hint1"),
+      card.querySelector(".hint2"),
+      card.querySelector(".hint3")
+    ];
+    let level = 0;
+
+    button.addEventListener("click", () => {
+      if(level < hints.length){
+        hints[level].classList.add("show");
+        level++;
+      }
+
+      if(level === 1){
+        button.textContent = "Mostrar pista 2";
+      }else if(level === 2){
+        button.textContent = "Mostrar ayuda visual";
+      }else if(level >= 3){
+        button.textContent = "Todas las pistas mostradas";
+        button.disabled = true;
+      }
+    });
+  });
+
+  // Autoevaluación rápida del cierre.
+  document.querySelectorAll(".self-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = btn.closest(".selfitem");
+      item.classList.toggle("done");
+      const checked = item.classList.contains("done");
+      btn.textContent = checked ? "✓ Marcado" : "Marcar";
+    });
+  });
+
+  completeMissionBtn.addEventListener("click", () => {
+    const fields = [
+      document.getElementById("final1"),
+      document.getElementById("final2"),
+      document.getElementById("final3")
+    ];
+
+    fields.forEach(field => field.classList.remove("field-error"));
+    finalValidation.classList.remove("show");
+    missionComplete.classList.remove("show");
+
+    const emptyFields = fields.filter(field => field.value.trim() === "");
+
+    if(emptyFields.length > 0){
+      emptyFields.forEach(field => field.classList.add("field-error"));
+      finalValidation.classList.add("show");
+      emptyFields[0].focus();
+      return;
+    }
+
+    const finalAnswers = {
+      concepto: fields[0].value.trim(),
+      dificultad: fields[1].value.trim(),
+      estrategia: fields[2].value.trim()
+    };
+
+    localStorage.setItem("misionCestaCierre", JSON.stringify(finalAnswers));
+    missionComplete.classList.add("show");
+  });
+
+  ["final1","final2","final3"].forEach(id => {
+    const field = document.getElementById(id);
+    field.addEventListener("input", () => {
+      if(field.value.trim() !== ""){
+        field.classList.remove("field-error");
+      }
+
+      const allComplete = ["final1","final2","final3"].every(fid =>
+        document.getElementById(fid).value.trim() !== ""
+      );
+
+      if(allComplete){
+        finalValidation.classList.remove("show");
+      }
+    });
+  });
+
+  // Recupera respuestas si el recurso ya fue usado en la misma computadora.
+  try{
+    const stored = JSON.parse(localStorage.getItem("misionCestaHipotesis") || "null");
+    if(stored){
+      document.getElementById("q1").value = stored.cesta || "";
+      document.getElementById("q2").value = stored.fruta || "";
+      document.getElementById("q3").value = stored.puntaje || "";
+      document.getElementById("q4").value = stored.impredecible || "";
+
+      const diagnosisComplete =
+        (stored.cesta || "").trim() &&
+        (stored.fruta || "").trim() &&
+        (stored.puntaje || "").trim() &&
+        (stored.impredecible || "").trim();
+
+      if(diagnosisComplete){
+        savedMsg.classList.add("show");
+        toToolsBtn.style.display = "inline-block";
+      }
+    }
+  }catch(e){}
+
+
+  try{
+    const submissionStored = JSON.parse(localStorage.getItem("misionCestaEntrega") || "null");
+    if(submissionStored?.completed){
+      fileName.textContent = "📄 " + (submissionStored.name || "proyecto.sb3");
+      fileMeta.textContent = "Entrega registrada en este equipo";
+      fileInfo.classList.add("show");
+      progressShell.classList.add("show");
+      progressBar.style.width = "100%";
+      uploadSuccess.classList.add("show");
+      continueAfterUploadBtn.disabled = false;
+    }
+  }catch(e){}
+
+  try{
+    const finalStored = JSON.parse(localStorage.getItem("misionCestaCierre") || "null");
+    if(finalStored){
+      document.getElementById("final1").value = finalStored.concepto || "";
+      document.getElementById("final2").value = finalStored.dificultad || "";
+      document.getElementById("final3").value = finalStored.estrategia || "";
+
+      const finalComplete =
+        (finalStored.concepto || "").trim() &&
+        (finalStored.dificultad || "").trim() &&
+        (finalStored.estrategia || "").trim();
+
+      if(finalComplete){
+        missionComplete.classList.add("show");
+      }
+    }
+  }catch(e){}
+</script>
+</body>
+</html>
